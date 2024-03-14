@@ -100,13 +100,8 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     spec.sampleRate = sampleRate;
     spec.numChannels = getTotalNumOutputChannels();
 
-    delayModule.prepare(spec);
     delayModule.reset();
-    std::fill(lastDelayOutput.begin(), lastDelayOutput.end(), 0.0f);
-    //std::fill(delayValue.begin(), delayValue.end(), 100.0f / 1000.0f * getSampleRate());
-
-    float delayMs = 500.0f;
-    delayModule.setDelay(delayMs / 1000.0f * getSampleRate());
+    delayModule.prepare(spec);
 }
 
 void ReverbAudioProcessor::releaseResources()
@@ -153,8 +148,8 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     // This is here to avoid people getting screaming feedback
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
-    //for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-    //    buffer.clear (i, 0, buffer.getNumSamples());
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+        buffer.clear (i, 0, buffer.getNumSamples());
 
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
@@ -162,30 +157,15 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    //for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    //{
-    //    auto* channelData = buffer.getWritePointer (channel);
+    const int bufferLength = buffer.getNumSamples();
 
-    //    // ..do something to the data...
-    //}
+    for (int channel = 0; channel < totalNumInputChannels; ++channel){
+        auto* data = buffer.getWritePointer(channel);
 
-    const auto numChannels = juce::jmax(totalNumInputChannels, totalNumOutputChannels);
-
-    auto audioBlock = juce::dsp::AudioBlock<float>(buffer).getSubsetChannelBlock(0, (size_t)numChannels);
-    auto context = juce::dsp::ProcessContextReplacing<float>(audioBlock);
-
-    const auto& input = context.getInputBlock();
-    const auto& output = context.getOutputBlock();
-
-    for (size_t channel = 0; channel < numChannels; ++channel) {
-        auto* samplesIn = input.getChannelPointer(channel);
-        auto* samplesOut = output.getChannelPointer(channel);
-
-        for (size_t sample = 0; sample < input.getNumSamples(); ++sample) {
-            auto input = samplesIn[sample];
-            delayModule.pushSample((int)channel, input);
-            delayModule.setDelay(getSampleRate());
-            samplesOut[sample] = delayModule.popSample((int)channel);
+        // ..do something to the data...
+        for (int i = 0; i < bufferLength; i++){
+            delayModule.pushSample(channel, data[i]);
+            data[i] += delayModule.popSample(channel, delayMs / 1000.0f * getSampleRate());
         }
     }
 }
