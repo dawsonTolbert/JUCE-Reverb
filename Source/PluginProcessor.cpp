@@ -164,8 +164,8 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
 
         // ..do something to the data...
         for (int i = 0; i < bufferLength; i++){
-            delayModule.pushSample(channel, data[i]);
             data[i] += delayModule.popSample(channel, delayMs / 1000.0f * getSampleRate());
+            delayModule.pushSample(channel, data[i] * decayGain);
         }
     }
 }

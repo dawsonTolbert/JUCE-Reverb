@@ -59,7 +59,8 @@ private:
     std::array<float, 2> lastDelayOutput;
     std::array<float, 2> delayValue{ {} };
 
-    float delayMs = 500.0f;
+    float delayMs = 80.0f;
+    float decayGain = 0.85f;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReverbAudioProcessor)
