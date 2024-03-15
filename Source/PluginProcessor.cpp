@@ -100,8 +100,19 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     spec.sampleRate = sampleRate;
     spec.numChannels = getTotalNumOutputChannels();
 
+    //preparing single channel delay feedback
     delayModule.reset();
     delayModule.prepare(spec);
+
+    //preparing multiChannel feedback
+    double delaySamplesBase = delayMs / 1000.0f * sampleRate;
+    for (int c = 0; c < channels; ++c) {
+        double r = c * 1.0f / channels;
+        delaySamples[c] = std::pow(2, r) * delaySamplesBase;
+
+        delays[c].reset();
+        delays[c].prepare(spec);
+    }
 }
 
 void ReverbAudioProcessor::releaseResources()
