@@ -105,10 +105,10 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     delayModule.prepare(spec);
 
     //preparing multiChannel feedback
-    double delaySamplesBase = delayMs / 1000.0f * sampleRate;
+    //double delaySamplesBase = delayMs / 1000.0f * sampleRate;
     for (int c = 0; c < delayChannels; ++c) {
-        double r = c * 1.0f / delayChannels;
-        delaySamples[c] = std::pow(2, r) * delaySamplesBase;
+        //double r = c * 1.0f / delayChannels;
+        //delaySamples[c] = std::pow(2, r) * delaySamplesBase;
 
         delays[c] = delayModule;
 
@@ -171,17 +171,19 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
     const int bufferLength = buffer.getNumSamples();
-
+    double delaySamplesBase = delayMs / 1000.0f * getSampleRate();
     for (int channel = 0; channel < totalNumInputChannels; ++channel){
         auto* data = buffer.getWritePointer(channel);
 
         // ..do something to the data...
-        //for (int c = 0; c < delayChannels; c++) {
-        //    for (int i = 0; i < bufferLength; i++) {
-        //        data[i] += delays[c].popSample(channel, delayMs / 1000.0f * getSampleRate());
-        //        delays[c].pushSample(channel, data[i] * decayGain);
-        //    }
-        //}
+        for (int c = 0; c < delayChannels; c++) {
+            double r = c * 1.0f / delayChannels;
+            delaySamples[c] = std::pow(2, r) * delaySamplesBase;
+            for (int i = 0; i < bufferLength; i++) {
+                data[i] += delays[c].popSample(channel, delaySamples[c]);
+                delays[c].pushSample(channel, data[i] * decayGain);
+            }
+        }
     }
 }
 

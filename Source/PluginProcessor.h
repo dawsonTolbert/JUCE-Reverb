@@ -59,7 +59,7 @@ private:
     std::array<float, 2> lastDelayOutput;
     std::array<float, 2> delayValue{ {} };
 
-    float delayMs = 80.0f;
+    float delayMs = 150.0f;
     float decayGain = 0.85f;
 
     //Multi Channel Feedback Array
