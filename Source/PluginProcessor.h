@@ -62,9 +62,10 @@ private:
     float delayMs = 80.0f;
     float decayGain = 0.85f;
 
-    static constexpr int channels = 8;
-    std::array<int, channels> delaySamples;
-    std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> , channels> delays;
+    //Multi Channel Feedback Array
+    static constexpr int delayChannels = 8;
+    std::array<int, delayChannels> delaySamples;
+    std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> , delayChannels> delays;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReverbAudioProcessor)

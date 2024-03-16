@@ -106,9 +106,11 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
 
     //preparing multiChannel feedback
     double delaySamplesBase = delayMs / 1000.0f * sampleRate;
-    for (int c = 0; c < channels; ++c) {
-        double r = c * 1.0f / channels;
+    for (int c = 0; c < delayChannels; ++c) {
+        double r = c * 1.0f / delayChannels;
         delaySamples[c] = std::pow(2, r) * delaySamplesBase;
+
+        delays[c] = delayModule;
 
         delays[c].reset();
         delays[c].prepare(spec);
@@ -174,10 +176,12 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         auto* data = buffer.getWritePointer(channel);
 
         // ..do something to the data...
-        for (int i = 0; i < bufferLength; i++){
-            data[i] += delayModule.popSample(channel, delayMs / 1000.0f * getSampleRate());
-            delayModule.pushSample(channel, data[i] * decayGain);
-        }
+        //for (int c = 0; c < delayChannels; c++) {
+        //    for (int i = 0; i < bufferLength; i++) {
+        //        data[i] += delays[c].popSample(channel, delayMs / 1000.0f * getSampleRate());
+        //        delays[c].pushSample(channel, data[i] * decayGain);
+        //    }
+        //}
     }
 }
 
