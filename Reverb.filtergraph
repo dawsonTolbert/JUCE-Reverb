@@ -65,7 +65,7 @@
           uiLastY_Normal="192" uiopen_Normal="1">
     <PLUGIN name="AudioFilePlayer" format="VST3" category="Fx" manufacturer="Matkat Music LLC"
             version="1.0.0" file="C:\Program Files\Common Files\VST3\AudioFilePlayer.vst3\Contents\x86_64-win\AudioFilePlayer.vst3"
-            uniqueId="79fe81c" isInstrument="0" fileTime="18dd8157e83" infoUpdateTime="18e3a9b652e"
+            uniqueId="79fe81c" isInstrument="0" fileTime="18dd8157e83" infoUpdateTime="18e53be8cde"
             numInputs="2" numOutputs="2" isShell="0" hasARAExtension="0"
             uid="e95d02c7"/>
     <STATE>286.VMjLgTQ....O+fWarAhckI2bo8la8HRLt.iHfTlai8FYo41Y8HRUTYTK3HxO9.BOVMEUy.Ea0cVZtMEcgQWY9vSRC8Vav8lak4Fc9DyLv3BTIISX1UEaho2ZVkUdAAkKAwDUigWRWkEcQ0VTucmUY4BQloTQLolShUELhsVRxHlXQISXxkjUYIVTTkUdyYzX0EzQWkGNwjkXQcEVxcmUXoVUwj0Yzf2Xmk0Qt3hKt3hKt3hKt3hKtnTUv.UQAslXuk0UXoWUFE0YQcEVtPDTtHzZGI1YMIiXtPDTtLjKPcjKt3hKt3hKt3haTU0PUQDU3sFaicVTWkEQEYzXmEDOujzPu0Fbu4VYtQmO77hUSQ0LPwVcmklaSQWXzUlO..</STATE>
@@ -78,14 +78,31 @@
       </OUTPUTS>
     </LAYOUT>
   </FILTER>
-  <FILTER uid="19" x="0.39" y="0.7051546391752578" useARA="0" uiLastX_Normal="1090"
-          uiLastY_Normal="453" uiopen_Normal="1">
+  <FILTER uid="19" x="0.39" y="0.7051546391752578" useARA="0" uiLastX_Normal="909"
+          uiLastY_Normal="630" uiopen_Normal="1">
     <PLUGIN name="Reverb" format="VST3" category="Fx" manufacturer="yourcompany"
             version="1.0.0" file="D:\C++\Repos\Reverb\Builds\VisualStudio2022\x64\Debug\VST3\Reverb.vst3\Contents\x86_64-win\Reverb.vst3"
-            uniqueId="298e02b" isInstrument="0" fileTime="18e3a978e3d" infoUpdateTime="18e3a9b652f"
+            uniqueId="298e02b" isInstrument="0" fileTime="18e53bd23c2" infoUpdateTime="18e53be8cdf"
             numInputs="2" numOutputs="2" isShell="0" hasARAExtension="0"
             uid="e95aa1bc"/>
     <STATE>191.VMjLgXK....O+fWarAhckI2bo8la8HRLt.iHfTlai8FYo41Y8HRUTYTK3HxO9.BOVMEUy.Ea0cVZtMEcgQWY9vSRC8Vav8lak4Fc9XCLt3hKt3hKt3hKt3hYRUUSTEETIckVwTjQisVTTgkdEYjKAQjYPQSPWgUdMcjKAQjct3hdA4hKt3hKt3hKtnTUv.UQAslXuk0UXoWUFE0YQcEV77RRC8Vav8lak4Fc9vyKVMEUy.Ea0cVZtMEcgQWY9..</STATE>
+    <LAYOUT>
+      <INPUTS>
+        <BUS index="0" layout="L R"/>
+      </INPUTS>
+      <OUTPUTS>
+        <BUS index="0" layout="L R"/>
+      </OUTPUTS>
+    </LAYOUT>
+  </FILTER>
+  <FILTER uid="20" x="0.76" y="0.4185567010309278" useARA="0" uiLastX_Normal="1339"
+          uiLastY_Normal="254" uiopen_Normal="1">
+    <PLUGIN name="AudioFilePlayer" format="VST3" category="Fx" manufacturer="Matkat Music LLC"
+            version="1.0.0" file="D:\C++\Repos\AudioFilePlayer\Builds\VisualStudio2019\x64\Debug\VST3\AudioFilePlayer.vst3\Contents\x86_64-win\AudioFilePlayer.vst3"
+            uniqueId="79fe81c" isInstrument="0" fileTime="18dd8157e83" infoUpdateTime="18e53be8cdf"
+            numInputs="2" numOutputs="2" isShell="0" hasARAExtension="0"
+            uid="e95d02c7"/>
+    <STATE>286.VMjLgTQ....O+fWarAhckI2bo8la8HRLt.iHfTlai8FYo41Y8HRUTYTK3HxO9.BOVMEUy.Ea0cVZtMEcgQWY9vSRC8Vav8lak4Fc9DyLv3BTIISX1UEaho2ZVkUdAAkKAwDUigWRWkEcQ0VTucmUY4BQloTQLolShUELhsVRxHlXQISXxkjUYIVTTkUdyYzX0EzQWkGNwjkXQcEVxcmUXoVUwj0Yzf2Xmk0Qt3hKt3hKt3hKt3hKtnTUv.UQAslXuk0UXoWUFE0YQcEVtPDTtHzZGI1YMIiXtPDTtLjKPcjKt3hKt3hKt3haTU0PUQDU3sFaicVTWkEQEYzXmEDOujzPu0Fbu4VYtQmO77hUSQ0LPwVcmklaSQWXzUlO..</STATE>
     <LAYOUT>
       <INPUTS>
         <BUS index="0" layout="L R"/>
@@ -99,4 +116,6 @@
   <CONNECTION srcFilter="18" srcChannel="1" dstFilter="19" dstChannel="1"/>
   <CONNECTION srcFilter="19" srcChannel="0" dstFilter="16" dstChannel="0"/>
   <CONNECTION srcFilter="19" srcChannel="1" dstFilter="16" dstChannel="1"/>
+  <CONNECTION srcFilter="20" srcChannel="0" dstFilter="16" dstChannel="0"/>
+  <CONNECTION srcFilter="20" srcChannel="1" dstFilter="16" dstChannel="1"/>
 </FILTERGRAPH>

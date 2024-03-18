@@ -9,6 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "mix-matrix.h"
+#include <vector>
 
 //==============================================================================
 ReverbAudioProcessor::ReverbAudioProcessor()
@@ -165,14 +166,33 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    const int bufferLength = buffer.getNumSamples();
+    double delaySamplesBase = delayMs / 1000.0f * getSampleRate();
+
+    // Create temporary buffers for each delay channel
+    std::vector<juce::AudioBuffer<float>> delayBuffers;
+    for (int c = 0; c < delayChannels; ++c){
+        juce::AudioBuffer<float> tempBuffer(totalNumInputChannels, bufferLength);
+        delayBuffers.push_back(tempBuffer);
+    }
+
+    // Copy input buffer to temporary delay buffers
+    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    {
+        auto* data = buffer.getReadPointer(channel);
+        for (int c = 0; c < delayChannels; c++)
+        {
+            delayBuffers[c].copyFrom(channel, 0, data, bufferLength);
+        }
+    }
+
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
     // Make sure to reset the state if your inner loop is processing
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    const int bufferLength = buffer.getNumSamples();
-    double delaySamplesBase = delayMs / 1000.0f * getSampleRate();
+
     for (int channel = 0; channel < totalNumInputChannels; ++channel){
         auto* data = buffer.getWritePointer(channel);
 
@@ -180,9 +200,16 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         for (int c = 0; c < delayChannels; c++) {
             double r = c * 1.0f / delayChannels;
             delaySamples[c] = std::pow(2, r) * delaySamplesBase;
+
+            //set delay buffers
+            auto* delayData = delayBuffers[c].getWritePointer(channel);
+
             for (int i = 0; i < bufferLength; i++) {
-                data[i] += delays[c].popSample(channel, delaySamples[c]);
-                delays[c].pushSample(channel, data[i] * decayGain);
+                //add delay feedback to delay channel buffers
+                delayData[i] += delays[c].popSample(channel, delaySamples[c]);
+                delays[c].pushSample(channel, delayData[i] * decayGain);
+                //add processed feedback channels to buffer
+                data[i] += delayData[i] / delayChannels;
             }
         }
     }
