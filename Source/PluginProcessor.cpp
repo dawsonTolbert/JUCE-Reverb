@@ -107,11 +107,7 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     delayModule.prepare(spec);
 
     //preparing multiChannel feedback
-    //double delaySamplesBase = delayMs / 1000.0f * sampleRate;
     for (int c = 0; c < delayChannels; ++c) {
-        //double r = c * 1.0f / delayChannels;
-        //delaySamples[c] = std::pow(2, r) * delaySamplesBase;
-
         delays[c] = delayModule;
 
         delays[c].reset();
@@ -176,13 +172,16 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         delayBuffers.push_back(tempBuffer);
     }
 
-    // Copy input buffer to temporary delay buffers
+    // Copy input buffer to temporary delay buffers and set delaySamples
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
         auto* data = buffer.getReadPointer(channel);
         for (int c = 0; c < delayChannels; c++)
         {
             delayBuffers[c].copyFrom(channel, 0, data, bufferLength);
+
+            double r = c * 1.0f / delayChannels;
+            delaySamples[c] = std::pow(2, r) * delaySamplesBase;
         }
     }
 
@@ -197,19 +196,26 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         auto* data = buffer.getWritePointer(channel);
 
         // ..do something to the data...
-        for (int c = 0; c < delayChannels; c++) {
-            double r = c * 1.0f / delayChannels;
-            delaySamples[c] = std::pow(2, r) * delaySamplesBase;
+        //for each sample in the buffer...
+        for (int i = 0; i < bufferLength; i++) {
 
-            //set delay buffers
-            auto* delayData = delayBuffers[c].getWritePointer(channel);
+            //prepare delay channel data for mixing
+            for (int c = 0; c < delayChannels; c++) {
+                auto* delayChannel = delayBuffers[c].getReadPointer(channel);
+                mixed[c] = delayChannel[i];
+            }
 
-            for (int i = 0; i < bufferLength; i++) {
-                //add delay feedback to delay channel buffers
-                delayData[i] += delays[c].popSample(channel, delaySamples[c]);
-                delays[c].pushSample(channel, delayData[i] * decayGain);
-                //add processed feedback channels to buffer
-                data[i] += delayData[i] / delayChannels;
+            //mix matrix processing
+            Householder<float, delayChannels>::inPlace(mixed.data());
+
+            //process each mixed delay channel
+            for (int c = 0; c < delayChannels; c++) {
+                //add delay feedback to mixed channel data
+                mixed[c] += delays[c].popSample(channel, delaySamples[c]);
+                //send processed and mixed feedback channel back to delays
+                delays[c].pushSample(channel, mixed[c] * decayGain);
+                //add processed and mixed feedback channel to buffer data
+                data[i] += mixed[c] / delayChannels;
             }
         }
     }

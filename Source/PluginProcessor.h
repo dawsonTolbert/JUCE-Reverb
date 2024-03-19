@@ -67,6 +67,8 @@ private:
     std::array<int, delayChannels> delaySamples;
     std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> , delayChannels> delays;
 
+    std::array<float, delayChannels> mixed;
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReverbAudioProcessor)
 };
