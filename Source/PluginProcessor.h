@@ -55,6 +55,8 @@ public:
 
     void processFeedbackDelay(std::vector<juce::AudioSampleBuffer> delayBuffers, int channel, int sample, float* data);
 
+    double randomInRange(double low, double high);
+
 private:
     static constexpr auto effectDelaySamples = 192000;
     juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> delayModule{ effectDelaySamples };
@@ -70,6 +72,14 @@ private:
     std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> , delayChannels> delays;
 
     std::array<float, delayChannels> mixed;
+
+    //Diffusion
+    static constexpr int diffusionSteps = 4;
+    float delayMsRange = 50.0f;
+    std::array<int, delayChannels> diffDelaySamples;
+    std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear>, delayChannels> diffDelays;
+
+    std::array<float, delayChannels> diffMixed;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReverbAudioProcessor)

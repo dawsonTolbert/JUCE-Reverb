@@ -11,6 +11,12 @@
 #include "mix-matrix.h"
 #include <vector>
 
+double ReverbAudioProcessor::randomInRange(double low, double high)
+{
+    double unitRand = rand() / double(RAND_MAX);
+    return low + unitRand * (high - low);
+}
+
 //==============================================================================
 ReverbAudioProcessor::ReverbAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -112,6 +118,11 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
 
         delays[c].reset();
         delays[c].prepare(spec);
+
+        diffDelays[c] = delayModule;
+
+        diffDelays[c].reset();
+        diffDelays[c].prepare(spec);
     }
 }
 
@@ -162,25 +173,41 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    const int bufferLength = buffer.getNumSamples();
-    double delaySamplesBase = delayMs / 1000.0f * getSampleRate();
-
     // Create temporary buffers for each delay channel
+    const int bufferLength = buffer.getNumSamples();
+    
     std::vector<juce::AudioBuffer<float>> delayBuffers;
+    std::vector<juce::AudioBuffer<float>> diffusionBuffers;
     for (int c = 0; c < delayChannels; ++c){
         juce::AudioBuffer<float> tempBuffer(totalNumInputChannels, bufferLength);
         delayBuffers.push_back(tempBuffer);
+
+        juce::AudioBuffer<float> diffTempBuffer(totalNumInputChannels, bufferLength);
+        diffusionBuffers.push_back(diffTempBuffer);
     }
 
+    double delaySamplesBase = delayMs / 1000.0f * getSampleRate();
+    double delaySamplesRange = delayMsRange / 1000.0f * getSampleRate();
+
+    std::array<bool, delayChannels> flipPolarity;
     // Copy input buffer to temporary delay buffers and set delaySamples
     for (int channel = 0; channel < totalNumInputChannels; ++channel){
         auto* data = buffer.getReadPointer(channel);
 
         for (int c = 0; c < delayChannels; c++){
+            //Feedback Delay Configguration
             delayBuffers[c].copyFrom(channel, 0, data, bufferLength);
 
             double r = c * 1.0f / delayChannels;
             delaySamples[c] = std::pow(2, r) * delaySamplesBase;
+
+            //Diffusion Delay Configuration
+            diffusionBuffers[c].copyFrom(channel, 0, data, bufferLength);
+
+            double rangeLow = delaySamplesRange * c / delayChannels;
+            double rangeHigh = delaySamplesRange * (c + 1) / delayChannels;
+            diffDelaySamples[c] = randomInRange(rangeLow, rangeHigh);
+            flipPolarity[c] = rand() % 2;
         }
     }
 
@@ -197,6 +224,21 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         // ..do something to the data...
         //for each sample in the buffer...
         for (int i = 0; i < bufferLength; i++) {
+            //prepare delay channel data for mixing
+            for (int c = 0; c < delayChannels; c++) {
+                auto* delayChannel = diffusionBuffers[c].getReadPointer(channel);
+                diffMixed[c] = delayChannel[i];
+            }
+
+            //mix matrix processing
+            Hadamard<float, delayChannels>::inPlace(diffMixed.data());
+
+            // Flip some polarities
+            for (int c = 0; c < delayChannels; ++c) {
+                if (flipPolarity[c]) diffMixed[c] *= -1;
+                data[i] += diffMixed[c] / delayChannels;
+            }
+
             processFeedbackDelay(delayBuffers, channel, i, data);
         }
     }
