@@ -56,6 +56,7 @@ public:
     void processFeedbackDelay(std::vector<juce::AudioSampleBuffer> delayBuffers, int channel, int sample, float* data);
 
     double randomInRange(double low, double high);
+    float applyLowPassFilter(float sample, float cutoffFrequency, float sampleRate);
 
 private:
     static constexpr auto effectDelaySamples = 192000;

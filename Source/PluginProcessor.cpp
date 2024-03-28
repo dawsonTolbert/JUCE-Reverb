@@ -236,12 +236,32 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
             // Flip some polarities
             for (int c = 0; c < delayChannels; ++c) {
                 if (flipPolarity[c]) diffMixed[c] *= -1;
+                diffMixed[c] = applyLowPassFilter(diffMixed[c],10000.0f,getSampleRate());
                 data[i] += diffMixed[c] / delayChannels;
             }
 
             processFeedbackDelay(delayBuffers, channel, i, data);
         }
     }
+}
+
+float ReverbAudioProcessor::applyLowPassFilter(float sample, float cutoffFrequency, float sampleRate) 
+{
+    // Calculate the filter coefficient based on cutoff frequency and sample rate
+    constexpr auto PI = 3.14159265359f;
+    float tau = 1.0f / (2.0f * PI * cutoffFrequency);
+    float alpha = exp(-tau / sampleRate);
+
+    // Static member to store the previous filtered sample (initially 0)
+    static float previousSample = 0.0f;
+
+    // Apply the filter formula
+    float filteredSample = alpha * previousSample + (1.0f - alpha) * sample;
+
+    // Update the previous sample for the next call
+    previousSample = filteredSample;
+
+    return filteredSample;
 }
 
 void ReverbAudioProcessor::processFeedbackDelay(std::vector<juce::AudioSampleBuffer> delayBuffers, int channel, int sample, float *data)
