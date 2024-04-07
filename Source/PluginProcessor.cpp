@@ -109,20 +109,34 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     spec.numChannels = getTotalNumOutputChannels();
 
     //preparing single channel delay feedback
-    delayModule.reset();
     delayModule.prepare(spec);
+    mixer.prepare(spec);
 
     //preparing multiChannel feedback
-    for (int c = 0; c < delayChannels; ++c) {
-        delays[c] = delayModule;
+    //for (int c = 0; c < delayChannels; ++c) {
+    //    delays[c] = delayModule;
 
-        delays[c].reset();
-        delays[c].prepare(spec);
+    //    delays[c].reset();
+    //    delays[c].prepare(spec);
 
-        diffDelays[c] = delayModule;
+    //    diffDelays[c] = delayModule;
 
-        diffDelays[c].reset();
-        diffDelays[c].prepare(spec);
+    //    diffDelays[c].reset();
+    //    diffDelays[c].prepare(spec);
+    //}
+
+    for (auto& volume : delayFeedbackVolume) {
+        volume.reset(spec.sampleRate, 0.05);
+    }
+
+    delayModule.reset();
+    mixer.reset();
+    std::fill(lastDelayOutput.begin(), lastDelayOutput.end(), 0.0f);
+    std::fill(delayValue.begin(), delayValue.end(), delayMs / 1000.0 * getSampleRate());
+
+    mixer.setWetMixProportion(0.8f);
+    for (auto& volume : delayFeedbackVolume) {
+        volume.setTargetValue(decayGain);
     }
 }
 
@@ -174,73 +188,105 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         buffer.clear (i, 0, buffer.getNumSamples());
 
     // Create temporary buffers for each delay channel
-    const int bufferLength = buffer.getNumSamples();
-    
-    std::vector<juce::AudioBuffer<float>> delayBuffers;
-    std::vector<juce::AudioBuffer<float>> diffusionBuffers;
-    for (int c = 0; c < delayChannels; ++c){
-        juce::AudioBuffer<float> tempBuffer(totalNumInputChannels, bufferLength);
-        delayBuffers.push_back(tempBuffer);
+    //const int bufferLength = buffer.getNumSamples();
+    //
+    //std::vector<juce::AudioBuffer<float>> delayBuffers;
+    //std::vector<juce::AudioBuffer<float>> diffusionBuffers;
+    //for (int c = 0; c < delayChannels; ++c){
+    //    juce::AudioBuffer<float> tempBuffer(totalNumInputChannels, bufferLength);
+    //    delayBuffers.push_back(tempBuffer);
 
-        juce::AudioBuffer<float> diffTempBuffer(totalNumInputChannels, bufferLength);
-        diffusionBuffers.push_back(diffTempBuffer);
-    }
+    //    juce::AudioBuffer<float> diffTempBuffer(totalNumInputChannels, bufferLength);
+    //    diffusionBuffers.push_back(diffTempBuffer);
+    //}
 
-    double delaySamplesBase = delayMs / 1000.0f * getSampleRate();
-    double delaySamplesRange = delayMsRange / 1000.0f * getSampleRate();
+    //double delaySamplesBase = delayMs / 1000.0f * getSampleRate();
+    //double delaySamplesRange = delayMsRange / 1000.0f * getSampleRate();
 
-    std::array<bool, delayChannels> flipPolarity;
-    // Copy input buffer to temporary delay buffers and set delaySamples
-    for (int channel = 0; channel < totalNumInputChannels; ++channel){
-        auto* data = buffer.getReadPointer(channel);
+    //std::array<bool, delayChannels> flipPolarity;
+    //// Copy input buffer to temporary delay buffers and set delaySamples
+    //for (int channel = 0; channel < totalNumInputChannels; ++channel){
+    //    auto* data = buffer.getReadPointer(channel);
 
-        for (int c = 0; c < delayChannels; c++){
-            //Feedback Delay Configguration
-            delayBuffers[c].copyFrom(channel, 0, data, bufferLength);
+    //    for (int c = 0; c < delayChannels; c++){
+    //        //Feedback Delay Configguration
+    //        delayBuffers[c].copyFrom(channel, 0, data, bufferLength);
 
-            double r = c * 1.0f / delayChannels;
-            delaySamples[c] = std::pow(2, r) * delaySamplesBase;
+    //        double r = c * 1.0f / delayChannels;
+    //        delaySamples[c] = std::pow(2, r) * delaySamplesBase;
 
-            //Diffusion Delay Configuration
-            diffusionBuffers[c].copyFrom(channel, 0, data, bufferLength);
+    //        //Diffusion Delay Configuration
+    //        diffusionBuffers[c].copyFrom(channel, 0, data, bufferLength);
 
-            double rangeLow = delaySamplesRange * c / delayChannels;
-            double rangeHigh = delaySamplesRange * (c + 1) / delayChannels;
-            diffDelaySamples[c] = randomInRange(rangeLow, rangeHigh);
-            flipPolarity[c] = rand() % 2;
-        }
-    }
+    //        double rangeLow = delaySamplesRange * c / delayChannels;
+    //        double rangeHigh = delaySamplesRange * (c + 1) / delayChannels;
+    //        diffDelaySamples[c] = randomInRange(rangeLow, rangeHigh);
+    //        flipPolarity[c] = rand() % 2;
+    //    }
+    //}
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
+    //// This is the place where you'd normally do the guts of your plugin's
+    //// audio processing...
+    //// Make sure to reset the state if your inner loop is processing
+    //// the samples and the outer loop is handling the channels.
+    //// Alternatively, you can process the samples with the channels
+    //// interleaved by keeping the same state.
 
-    for (int channel = 0; channel < totalNumInputChannels; ++channel){
-        auto* data = buffer.getWritePointer(channel);
+    //for (int channel = 0; channel < totalNumInputChannels; ++channel){
+    //    auto* data = buffer.getWritePointer(channel);
 
-        // ..do something to the data...
-        //for each sample in the buffer...
-        for (int i = 0; i < bufferLength; i++) {
-            //prepare delay channel data for mixing
-            for (int c = 0; c < delayChannels; c++) {
-                auto* delayChannel = diffusionBuffers[c].getReadPointer(channel);
-                diffMixed[c] = delayChannel[i];
-            }
+    //    // ..do something to the data...
+    //    //for each sample in the buffer...
+    //    for (int i = 0; i < bufferLength; i++) {
+    //        //prepare delay channel data for mixing
+    //        for (int c = 0; c < delayChannels; c++) {
+    //            auto* delayChannel = diffusionBuffers[c].getReadPointer(channel);
+    //            diffMixed[c] = delayChannel[i];
+    //        }
 
-            //mix matrix processing
-            Hadamard<float, delayChannels>::inPlace(diffMixed.data());
+    //        //mix matrix processing
+    //        Hadamard<float, delayChannels>::inPlace(diffMixed.data());
 
-            // Flip some polarities
-            for (int c = 0; c < delayChannels; ++c) {
-                if (flipPolarity[c]) diffMixed[c] *= -1;
-                diffMixed[c] = applyLowPassFilter(diffMixed[c],10000.0f,getSampleRate());
-                data[i] += diffMixed[c] / delayChannels;
-            }
+    //        // Flip some polarities
+    //        for (int c = 0; c < delayChannels; ++c) {
+    //            if (flipPolarity[c]) diffMixed[c] *= -1;
+    //            diffMixed[c] = applyLowPassFilter(diffMixed[c],10000.0f,getSampleRate());
+    //            data[i] += diffMixed[c] / delayChannels;
+    //        }
 
-            processFeedbackDelay(delayBuffers, channel, i, data);
+    //        processFeedbackDelay(delayBuffers, channel, i, data);
+    //    }
+    //}
+    auto audioBlock = juce::dsp::AudioBlock<float>(buffer).getSubsetChannelBlock(0, (size_t)totalNumInputChannels);
+    auto context = juce::dsp::ProcessContextReplacing<float>(audioBlock);
+    const auto& input = context.getInputBlock();
+    const auto& output = context.getOutputBlock();
+
+    mixer.pushDrySamples(input);
+    processDelay(input, output);
+    mixer.mixWetSamples(output);
+}
+
+void ReverbAudioProcessor::processDelay(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output)
+{
+    const auto numChannels = input.getNumChannels();
+    const auto numSamples = input.getNumSamples();
+
+    for (size_t channel = 0; channel < numChannels; ++channel)
+    {
+        auto* samplesIn = input.getChannelPointer(channel);
+        auto* samplesOut = output.getChannelPointer(channel);
+
+        for (size_t i = 0; i < numSamples; ++i)
+        {
+            auto input = samplesIn[i] - lastDelayOutput[channel];
+            auto delay = delayValue[channel];
+
+            delayModule.pushSample(int(channel), input);
+            delayModule.setDelay((float)delay);
+            samplesOut[i] = delayModule.popSample(int(channel));
+
+            lastDelayOutput[channel] = samplesOut[i] * delayFeedbackVolume[channel].getNextValue();
         }
     }
 }

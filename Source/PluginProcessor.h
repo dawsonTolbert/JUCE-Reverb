@@ -54,6 +54,8 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     void processFeedbackDelay(std::vector<juce::AudioSampleBuffer> delayBuffers, int channel, int sample, float* data);
+    void processDelay(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output);
+    void mixDownToTwoChannels(const juce::AudioBuffer<float>& input, juce::AudioBuffer<float>& output);
 
     double randomInRange(double low, double high);
     float applyLowPassFilter(float sample, float cutoffFrequency, float sampleRate);
@@ -63,6 +65,9 @@ private:
     juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> delayModule{ effectDelaySamples };
     std::array<float, 2> lastDelayOutput;
     std::array<float, 2> delayValue{ {} };
+    std::array<juce::LinearSmoothedValue<float>, 2> delayFeedbackVolume;
+    juce::dsp::DryWetMixer<float> mixer;
+    juce::AudioBuffer<float> delayBuffers;
 
     float delayMs = 150.0f;
     float decayGain = 0.85f;
