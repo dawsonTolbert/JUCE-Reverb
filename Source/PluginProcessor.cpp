@@ -108,8 +108,6 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     spec.sampleRate = sampleRate;
     spec.numChannels = getTotalNumOutputChannels();
 
-    //preparing single channel delay feedback
-    delayModule.prepare(spec);
     mixer.prepare(spec);
 
     //preparing multiChannel feedback
@@ -129,15 +127,26 @@ void ReverbAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
         volume.reset(spec.sampleRate, 0.05);
     }
 
+    //preparing 8 channel delay feedback
+    spec.numChannels = delayChannels;
+    delayModule.prepare(spec);
+    float delaySamplesBase = delayMs / 1000.0 * getSampleRate();
+    for (int c = 0; c < delayChannels; ++c) {
+        float r = c * 1.0 / delayChannels;
+        delayValue[c] = std::pow(2, r) * delaySamplesBase;
+    }
+
     delayModule.reset();
     mixer.reset();
     std::fill(lastDelayOutput.begin(), lastDelayOutput.end(), 0.0f);
-    std::fill(delayValue.begin(), delayValue.end(), delayMs / 1000.0 * getSampleRate());
+    //std::fill(delayValue.begin(), delayValue.end(), delayMs / 1000.0 * getSampleRate());
 
     mixer.setWetMixProportion(0.8f);
     for (auto& volume : delayFeedbackVolume) {
         volume.setTargetValue(decayGain);
     }
+
+    delayBuffers.setSize(delayChannels, samplesPerBlock);
 }
 
 void ReverbAudioProcessor::releaseResources()
@@ -262,8 +271,43 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     const auto& input = context.getInputBlock();
     const auto& output = context.getOutputBlock();
 
+    //copy buffer across delayChannels
+    for (int i = 1; i < delayChannels; ++i) {
+        if (i == 0 || i % 2 == 0) {
+            delayBuffers.copyFrom(i, 0, buffer, 0, 0, buffer.getNumSamples());
+        }
+        else {
+            delayBuffers.copyFrom(i, 0, buffer, 1, 0, buffer.getNumSamples());
+        }
+    }
+
+    auto delayBlock = juce::dsp::AudioBlock<float>(delayBuffers).getSubsetChannelBlock(0, delayChannels);
+    auto delayContext = juce::dsp::ProcessContextReplacing<float>(delayBlock);
+    const auto& delayInput = delayContext.getInputBlock();
+    const auto& delayOutput = delayContext.getOutputBlock();
+
+    //Push dry stereo channels to mixer, process delay
     mixer.pushDrySamples(input);
-    processDelay(input, output);
+    processDelay(delayInput, delayOutput);
+
+    auto* mixDownLeft = output.getChannelPointer(0);
+    auto* mixDownRight = output.getChannelPointer(1);
+    //for each delay channel, mix down samples
+    for (size_t channel = 0; channel < delayChannels; ++channel) {
+        //for each sample, add to mixDown channel at 25% gain
+        auto* preMix = delayOutput.getChannelPointer(channel);
+        if (channel == 0 || channel % 2 == 0) {
+            for (size_t i = 0; i < buffer.getNumSamples(); ++i) {
+                mixDownLeft[i] = preMix[i] * 0.25;
+            }
+        }
+        else {
+            for (size_t i = 0; i < buffer.getNumSamples(); ++i) {
+                mixDownRight[i] = preMix[i] * 0.25;
+            }
+        }
+    }
+
     mixer.mixWetSamples(output);
 }
 

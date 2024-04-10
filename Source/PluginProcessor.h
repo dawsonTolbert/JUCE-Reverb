@@ -63,9 +63,9 @@ public:
 private:
     static constexpr auto effectDelaySamples = 192000;
     juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> delayModule{ effectDelaySamples };
-    std::array<float, 2> lastDelayOutput;
-    std::array<float, 2> delayValue{ {} };
-    std::array<juce::LinearSmoothedValue<float>, 2> delayFeedbackVolume;
+    std::array<float, 8> lastDelayOutput;
+    std::array<float, 8> delayValue{ {} };
+    std::array<juce::LinearSmoothedValue<float>, 8> delayFeedbackVolume;
     juce::dsp::DryWetMixer<float> mixer;
     juce::AudioBuffer<float> delayBuffers;
 
