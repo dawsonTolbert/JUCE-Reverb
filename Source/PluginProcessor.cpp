@@ -212,21 +212,8 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     mixer.pushDrySamples(input);
     processDelay(delayInput, delayOutput);
 
-    auto* mixDownLeft = output.getChannelPointer(0);
-    auto* mixDownRight = output.getChannelPointer(1);
-    //for each delay channel, mix down samples
-    for (size_t i = 0; i < buffer.getNumSamples(); ++i) {
-        for (size_t channel = 0; channel < delayChannels; ++channel) {
-            //for each sample, add to mixDown channel at 25% gain
-            auto* preMix = delayOutput.getChannelPointer(channel);
-            if (channel == 0 || channel % 2 == 0) {
-                mixDownLeft[i] += preMix[i] * 0.25;
-            }
-            else {
-                mixDownRight[i] += preMix[i] * 0.25;
-            }
-        }
-    }
+    //Mix processed delay back down to Stereo channels
+    mixDownToTwoChannels(delayOutput, output, buffer.getNumSamples());
 
     mixer.mixWetSamples(output);
 }
@@ -250,6 +237,25 @@ void ReverbAudioProcessor::processDelay(const juce::dsp::AudioBlock<const float>
             samplesOut[i] = delayModule.popSample(int(channel));
 
             lastDelayOutput[channel] = samplesOut[i] * delayFeedbackVolume[channel].getNextValue();
+        }
+    }
+}
+
+void ReverbAudioProcessor::mixDownToTwoChannels(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output, int samples)
+{
+    auto* mixDownLeft = output.getChannelPointer(0);
+    auto* mixDownRight = output.getChannelPointer(1);
+    //for each delay channel, mix down samples
+    for (size_t i = 0; i < samples; ++i) {
+        for (size_t channel = 0; channel < delayChannels; ++channel) {
+            //for each sample, add to mixDown channel at 25% gain
+            auto* preMix = input.getChannelPointer(channel);
+            if (channel == 0 || channel % 2 == 0) {
+                mixDownLeft[i] += preMix[i] * 0.25;
+            }
+            else {
+                mixDownRight[i] += preMix[i] * 0.25;
+            }
         }
     }
 }
