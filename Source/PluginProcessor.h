@@ -74,6 +74,7 @@ private:
     //Multi Channel Feedback Array
     static constexpr int delayChannels = 8;
     std::array<int, delayChannels> delaySamples;
+    std::array<float, delayChannels> delayed;
     //std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> , delayChannels> delays;
 
     std::array<float, delayChannels> mixed;

@@ -225,16 +225,26 @@ void ReverbAudioProcessor::processDelay(const juce::dsp::AudioBlock<const float>
 
     for (size_t i = 0; i < numSamples; ++i)
     {
+        //get delayed channels
         for (size_t channel = 0; channel < numChannels; ++channel)
         {
             auto* samplesIn = input.getChannelPointer(channel);
-            auto* samplesOut = output.getChannelPointer(channel);
 
             auto input = samplesIn[i] - lastDelayOutput[channel];
             delayModule.setDelay((float)delayValue[channel]);
 
             delayModule.pushSample(int(channel), input);
-            samplesOut[i] = delayModule.popSample(int(channel));
+            delayed[channel] = delayModule.popSample(int(channel));
+        }
+
+        //mix delayed channels
+        std::array<float, delayChannels> mixed = delayed;
+        Householder<float, delayChannels>::inPlace(mixed.data());
+
+        //send mixed channels to output, send output with gain to lastDelayOutput
+        for (size_t channel = 0; channel < numChannels; ++channel) {
+            auto* samplesOut = output.getChannelPointer(channel);
+            samplesOut[i] = mixed[channel];
 
             lastDelayOutput[channel] = samplesOut[i] * delayFeedbackVolume[channel].getNextValue();
         }
