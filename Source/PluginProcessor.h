@@ -53,7 +53,6 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    void processFeedbackDelay(std::vector<juce::AudioSampleBuffer> delayBuffers, int channel, int sample, float* data);
     void processDelay(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output);
     void mixDownToTwoChannels(const juce::AudioBuffer<float>& input, juce::AudioBuffer<float>& output);
 
@@ -75,17 +74,17 @@ private:
     //Multi Channel Feedback Array
     static constexpr int delayChannels = 8;
     std::array<int, delayChannels> delaySamples;
-    std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> , delayChannels> delays;
+    //std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> , delayChannels> delays;
 
     std::array<float, delayChannels> mixed;
 
     //Diffusion
-    static constexpr int diffusionSteps = 4;
-    float delayMsRange = 50.0f;
-    std::array<int, delayChannels> diffDelaySamples;
-    std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear>, delayChannels> diffDelays;
+    //static constexpr int diffusionSteps = 4;
+    //float delayMsRange = 50.0f;
+    //std::array<int, delayChannels> diffDelaySamples;
+    //std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear>, delayChannels> diffDelays;
 
-    std::array<float, delayChannels> diffMixed;
+    //std::array<float, delayChannels> diffMixed;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReverbAudioProcessor)
