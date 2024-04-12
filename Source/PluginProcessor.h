@@ -53,6 +53,7 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    void diffusionStep(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output);
     void processDelay(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output);
     void mixDownToTwoChannels(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output, int samples);
 
@@ -78,6 +79,10 @@ private:
     //std::array<juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> , delayChannels> delays;
 
     std::array<float, delayChannels> mixed;
+
+    //Diffusion
+    std::array<bool, delayChannels> flipPolarity;
+    float delayMsRange = 50.f;
 
     //Diffusion
     //static constexpr int diffusionSteps = 4;

@@ -210,12 +210,53 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
 
     //Push dry stereo channels to mixer, process delay
     mixer.pushDrySamples(input);
-    processDelay(delayInput, delayOutput);
+
+    
+    diffusionStep(delayInput, delayOutput);
+    //processDelay(delayInput, delayOutput);
 
     //Mix processed delay back down to Stereo channels
     mixDownToTwoChannels(delayOutput, output, buffer.getNumSamples());
 
     mixer.mixWetSamples(output);
+}
+
+void ReverbAudioProcessor::diffusionStep(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output)
+{
+    const auto numChannels = input.getNumChannels();
+    const auto numSamples = input.getNumSamples();
+
+    for (size_t i = 0; i < numSamples; ++i)
+    {
+        //get delayed channels
+        float delaySamplesRange = delayMsRange / 1000.0 * getSampleRate();
+        for (size_t channel = 0; channel < numChannels; ++channel)
+        {
+            float rangeLow = delaySamplesRange * channel / numChannels;
+            float rangeHigh = delaySamplesRange * (channel + 1) / numChannels;
+            float delayVal = randomInRange(rangeLow, rangeHigh);
+
+            auto* samplesIn = input.getChannelPointer(channel);
+            auto input = samplesIn[i];
+            delayModule.pushSample(int(channel), input);
+            delayModule.setDelay(delayVal);
+            delayed[channel] = delayModule.popSample(int(channel));
+
+            flipPolarity[channel] = rand() % 2;
+        }
+
+        //mix delayed channels
+        std::array<float, delayChannels> mixed = delayed;
+        Hadamard<float, delayChannels>::inPlace(mixed.data());
+
+        //flip polarities, send mixed channels to output
+        for (size_t channel = 0; channel < numChannels; ++channel) {
+            if (flipPolarity[channel]) mixed[channel] *= -1;
+
+            auto* samplesOut = output.getChannelPointer(channel);
+            samplesOut[i] = mixed[channel];
+        }
+    }
 }
 
 void ReverbAudioProcessor::processDelay(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output)
