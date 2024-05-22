@@ -212,8 +212,8 @@ void ReverbAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     mixer.pushDrySamples(input);
 
     
-    diffusionStep(delayInput, delayOutput);
-    //processDelay(delayInput, delayOutput);
+    //diffusionStep(delayInput, delayOutput);
+    processDelay(delayOutput);
 
     //Mix processed delay back down to Stereo channels
     mixDownToTwoChannels(delayOutput, output, buffer.getNumSamples());
@@ -259,17 +259,17 @@ void ReverbAudioProcessor::diffusionStep(const juce::dsp::AudioBlock<const float
     }
 }
 
-void ReverbAudioProcessor::processDelay(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output)
+void ReverbAudioProcessor::processDelay(const juce::dsp::AudioBlock<float>& output)
 {
-    const auto numChannels = input.getNumChannels();
-    const auto numSamples = input.getNumSamples();
+    const auto numChannels = output.getNumChannels();
+    const auto numSamples = output.getNumSamples();
 
     for (size_t i = 0; i < numSamples; ++i)
     {
         //get delayed channels
         for (size_t channel = 0; channel < numChannels; ++channel)
         {
-            auto* samplesIn = input.getChannelPointer(channel);
+            auto* samplesIn = output.getChannelPointer(channel);
 
             auto input = samplesIn[i] - lastDelayOutput[channel];
             delayModule.setDelay((float)delayValue[channel]);

@@ -54,7 +54,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     void diffusionStep(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output);
-    void processDelay(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output);
+    void processDelay(const juce::dsp::AudioBlock<float>& output);
     void mixDownToTwoChannels(const juce::dsp::AudioBlock<const float>& input, const juce::dsp::AudioBlock<float>& output, int samples);
 
     double randomInRange(double low, double high);
